@@ -5,8 +5,8 @@
  * 
  */
 
-#define DIR_L 10
-#define STP_L 9
+#define DIR_L 9
+#define STP_L 10
 
 #define DIR_R 7
 #define STP_R 8
@@ -34,13 +34,11 @@ float ypr[3];
 
 volatile bool mpuInterrupt = false;
 
-//double Kp = 43;
-//double Ki = 63.1;
-//double Kd = 30.1;
 
-double Kp = 16.9;
-double Ki = 3.0;
-double Kd = 600;
+double Kp = 50;
+double Ki = 0.0;
+double Kd = 36.3;
+
 
 double error;
 double previousError;
@@ -48,13 +46,20 @@ double previousError;
 double aimAngle = 0.0;
 double currentAngle;
 
-double P_control, I_control, D_control;
+double P_control, D_control;
+double I_control = 0;
 double PID_control;
-double t = 0.0001;
+//double t = 0.0001;
 
-int offsetMotor1 = 30;
-int offsetMotor2 = 0;
-int angleOffset = 0.0;
+int angleOffset = 0.2;
+
+//int maxSpd = 700;
+int maxSpd = 3000;
+
+double currentTime = millis();
+double previousTime = 0;
+double t = currentTime - previousTime;
+
 
 MPU6050 mpu;
 
@@ -70,15 +75,15 @@ void setup() {
   pinMode(DIR_L, OUTPUT);
   pinMode(DIR_R, OUTPUT);
 
-  stepperL.setCurrentPosition(0);
-  stepperR.setCurrentPosition(0);
+//  stepperL.setCurrentPosition(0);
+//  stepperR.setCurrentPosition(0);
 
-  stepperL.setMaxSpeed(1000.0);
-  stepperL.setAcceleration(100.0);
-  stepperL.setSpeed(50);
-  stepperR.setMaxSpeed(1000.0);
-  stepperR.setAcceleration(100.0);
-  stepperR.setSpeed(50);
+  stepperL.setMaxSpeed(maxSpd);
+  stepperL.setAcceleration(50);
+  stepperL.setSpeed(maxSpd);
+  stepperR.setMaxSpeed(maxSpd);
+  stepperR.setAcceleration(50);
+  stepperR.setSpeed(maxSpd);
 
   Wire.begin();
   Wire.setClock(400000);
@@ -86,12 +91,12 @@ void setup() {
   Serial.begin(115200);
   Serial.println("Initialzing ... ");
 
-//  calibration();
+  calibration();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-//   selfBalancing(PID());
+   selfBalancing(PID());
 //
 //   //Serial.println(millis());
 //  if(digitalRead(BT))
@@ -101,7 +106,7 @@ void loop() {
 //    Kp -= 0.1;
 //    calibration();
 //  }
-  forward(10);
+
 }
 
 void calibration()
@@ -139,16 +144,29 @@ void calibration()
 
 int PID()
 {
+  previousTime = currentTime;
+  currentTime = millis();
+  t = currentTime - previousTime;
   currentAngle = getPitch();
+  Serial.println(currentAngle);
+  
+  //Serial.println(currentAngle);
   error = errOffset(aimAngle - currentAngle);
   P_control = Kp * error;
   I_control += Ki * error * t;
   D_control = Kd * (error - previousError) / t;
+//  Serial.print("P_control : ");
+//  Serial.println(P_control);
+//  Serial.print("I_control : ");
+//  Serial.println(Ki * error * t);
+//  Serial.print("D_control : ");
+//  Serial.println(D_control);
+  //Serial.println((error - previousError) / t);
 
   PID_control = P_control + I_control + D_control;
-//  Serial.println(PID_control);
-  //PID_control = constrain(PID_control, -500, 500);
-
+  // Serial.println(PID_control);
+  PID_control = constrain(PID_control, -maxSpd, maxSpd);
+  Serial.println(PID_control);
   previousError = error;
 
   return PID_control;
@@ -200,7 +218,6 @@ void forward(int spd)
 
 void backward(int spd)
 {
-
   stepperL.setSpeed(spd);
   stepperR.setSpeed(-spd);
   stepperL.runSpeed();
