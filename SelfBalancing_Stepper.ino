@@ -34,6 +34,12 @@ float ypr[3];
 
 volatile bool mpuInterrupt = false;
 
+/*
+ * 튜닝값을 변경하고자 하면 아래 3개의 변수의 값을 조절하여 튜닝하세요 !
+ * Kp : P제어 상수
+ * Ki : I제어 상수
+ * Kd : D제어 상수
+ */
 
 double Kp = 50;
 double Ki = 0.0;
