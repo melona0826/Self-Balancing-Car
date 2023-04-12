@@ -1,4 +1,4 @@
-# 🚗 야무지니 PID Self-Balancing Car Code 입니다 🚗   
+# 🚗 야무지니 PID Self-Balancing Car 입니다 🚗   
 
 ***
 
